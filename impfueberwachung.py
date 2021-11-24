@@ -64,7 +64,7 @@ def buildForAllSubscribers(subscribers, subject, content):
 
 
 def isFreeAppointment(tag):
-    return tag['TERMIN_STATUS'] == 1 and tag['TERMIN_STATUS'] != 2 and tag['TERMIN_STATUS'] != 3
+    return tag['TERMIN_STATUS'] != 1 and tag['TERMIN_STATUS'] != 2 and tag['TERMIN_STATUS'] != 3
 
 
 def searchForAppointment(data, frontendUrl):
