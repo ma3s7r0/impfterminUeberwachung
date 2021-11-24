@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from datetime import date
 from time import sleep
 from email.message import EmailMessage
+from pprint import pprint
 import smtplib
 import ssl
 import os
@@ -22,15 +23,16 @@ STOPFILE_NAME = 'stopTheCount'
 TODAY = date.today()
 year = TODAY.year
 kw = TODAY.isocalendar()[1]
-baseUrl = 'https://backend.impfen-ka.de/api.php/terminportal/getWochenAnsicht?'
+impfPlaces = json.loads(os.environ.get('impfPlaces'))
+
 
 SENDER = os.environ.get('eMailUser')
 SUBSCRIBERS = os.environ.get('subscribers').split(",")
 
 
-def getData(kw, year):
+def getData(kw, year, url):
     params = dict(KW=kw, JAHR=year)
-    resp = requests.get(url=baseUrl, params=params)
+    resp = requests.get(url=url, params=params)
     return resp.json()
 
 
@@ -54,7 +56,7 @@ def buildEmail(subscriber, subject, content):
     return message
 
 
-def sendToSubscribers(subscribers, subject, content):
+def buildForAllSubscribers(subscribers, subject, content):
     messages = []
     for subscriber in subscribers:
         messages.append(buildEmail(subscriber, subject, content))
@@ -62,19 +64,18 @@ def sendToSubscribers(subscribers, subject, content):
 
 
 def isFreeAppointment(tag):
-    return tag['TERMIN_STATUS'] != 1 and tag['TERMIN_STATUS'] != 2 and tag['TERMIN_STATUS'] != 3
+    return tag['TERMIN_STATUS'] == 1 and tag['TERMIN_STATUS'] != 2 and tag['TERMIN_STATUS'] != 3
 
 
-def searchForAppointment(data):
+def searchForAppointment(data, frontendUrl):
     for timeSlot in data:
-        print(f"Checking timeslot: {timeSlot['OEFFNUNGSZEIT']}")
         for tag in timeSlot['SPENDE_TERMIN']:
             print(f"Checking timeslot on day: {tag['DATUM']}")
-            print(tag['TERMIN_STATUS'], tag['TEXT'])
             if isFreeAppointment(tag):
                 subject = f'''Freier Impftermin {tag['DATUM']} um {tag['OEFFNUNGSZEIT']}'''
-                content = f'''Es gibt einen freien Termin am {tag['DATUM']} um {tag['OEFFNUNGSZEIT']}.\nGo to https://www.impfen-eceka.de/#/desktop-view and get it. Fast!'''
-                messages = sendToSubscribers(SUBSCRIBERS, subject, content)
+                content = f'''Es gibt einen freien Termin am {tag['DATUM']} um {tag['OEFFNUNGSZEIT']}.\nGo to {frontendUrl} and get it. Quick!'''
+                messages = buildForAllSubscribers(SUBSCRIBERS, subject, content)
+                pprint(messages)
                 sendMails(messages)
                 fp = open(STOPFILE_NAME, 'x')
                 fp.close()
@@ -84,17 +85,17 @@ def searchForAppointment(data):
                 return True
     return False
 
-
-while not os.path.isfile(STOPFILE_NAME):
-    data = getData(kw, year)
-    if not data:
-        print(f'Can\'t find any appointments. KW {kw} is not online.')
-        break
-    print(f'Checking KW:{kw} year:{year}')
-    found = searchForAppointment(data)
-    if found:
-        break
-    kw += 1
-    nextYear, kw = divmod(kw, 53)
-    if nextYear:
-        year += 1
+for impfPlace in impfPlaces:
+    while not os.path.isfile(STOPFILE_NAME):
+            data = getData(kw, year, impfPlace['backend'])
+            if not data:
+                print(f"Can\'t find any appointments. KW {kw} for {impfPlace['backend']} is not online.")
+                break
+            print(f'Checking KW:{kw} year:{year}')
+            found = searchForAppointment(data, impfPlace['frontend'])
+            if found:
+                break
+            kw += 1
+            nextYear, kw = divmod(kw, 53)
+            if nextYear:
+                year += 1
