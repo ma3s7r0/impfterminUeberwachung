@@ -1,2 +1,4 @@
 impf-configuration.env
-.venv/*
+.venv/
+__pycache__
+ressources
