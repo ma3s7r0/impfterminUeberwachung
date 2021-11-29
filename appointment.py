@@ -10,4 +10,4 @@ class Appointment(object):
         return f"am {self.tag} um {self.uhrzeit}\n"
 
     def same_day(self, otherApp):
-        return self.day == otherApp.day
+        return self.tag == otherApp.tag

@@ -4,13 +4,12 @@ from dotenv import load_dotenv
 from datetime import date
 from time import sleep
 from typing import List
-import appointment
+from appointment import Appointment
 import os
 import requests
 import json
 import impfTwitter
 import impfEmail
-
 
 load_dotenv('impf-configuration.env')
 
@@ -22,13 +21,13 @@ impfPlaces = json.loads(os.environ.get('impfPlaces'))
 TWEET_MAX_CHARS = 280
 
 
-def _getData(kw, year, url):
+def _get_data(kw, year, url):
     params = dict(KW=kw, JAHR=year)
     resp = requests.get(url=url, params=params)
     return resp.json()
 
 
-def _isFreeAppointment(tag):
+def _is_free_appointment(tag):
     return tag['TERMIN_STATUS'] != 1 and tag['TERMIN_STATUS'] != 2 and tag['TERMIN_STATUS'] != 3
 
 
@@ -45,16 +44,15 @@ def _condense_appointments(free_appointments):
     return condensed_apps
 
 
-def _searchForAppointment(data, frontend_url):
-    free_appointments: List[appointment.Appointment] = []
+def _search_for_appointment(data, frontend_url):
+    free_appointments: List[Appointment] = []
     for timeSlot in data:
         for day in timeSlot['SPENDE_TERMIN']:
-            #print(f"Checking timeslot on day: {day['DATUM']}")
-            if _isFreeAppointment(day):
-                free_appointments.append(appointment.Appointment(
+            # print(f"Checking timeslot on day: {day['DATUM']}")
+            if _is_free_appointment(day):
+                free_appointments.append(Appointment(
                     day['DATUM'], day['OEFFNUNGSZEIT']))
 
-    condensed_appointments = {}
     if len(free_appointments) != 0:
         condensed_appointments = _condense_appointments(free_appointments)
         impfEmail.send_mails(condensed_appointments, frontend_url)
@@ -68,13 +66,13 @@ found_any = False
 for impfPlace in impfPlaces:
     kw = TODAY.isocalendar()[1]
     while not os.path.isfile(STOPFILE_NAME):
-        data = _getData(kw, year, impfPlace['backend'])
+        data = _get_data(kw, year, impfPlace['backend'])
         if not data:
             print(
                 f"Can\'t find any appointments. KW {kw} for {impfPlace['backend']} is not online.")
             break
-        print(f"Checking KW:{kw} year:{year} in {impfPlace['backend']}")
-        found = _searchForAppointment(data, impfPlace['frontend'])
+        print(f"Checking {impfPlace['backend']}KW={kw}&JAHR={year}")
+        found = _search_for_appointment(data, impfPlace['frontend'])
         if found:
             found_any = True
         kw += 1
@@ -86,5 +84,5 @@ if found_any:
     fp = open(STOPFILE_NAME, 'x')
     fp.close()
     print("Found at least one appointment. Sent eMails and tweet. Now sleeping for an 1/4 hour.")
-    sleep(60*15)
+    sleep(60 * 15)
     os.remove(STOPFILE_NAME)
