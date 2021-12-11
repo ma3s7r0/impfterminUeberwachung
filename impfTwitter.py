@@ -35,3 +35,4 @@ def _build_tweets(frontend_url, free_appointments):
         papp = f"Am {day} um {uhrzeiten}"
         tweet = tweet_start + papp + tweet_end
         tweets.append(tweet)
+    return tweets

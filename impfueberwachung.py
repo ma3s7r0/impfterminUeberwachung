@@ -65,6 +65,7 @@ def _search_for_appointment(data, frontend_url):
 found_any = False
 for impfPlace in impfPlaces:
     kw = TODAY.isocalendar()[1]
+    year = TODAY.year
     while not os.path.isfile(STOPFILE_NAME):
         data = _get_data(kw, year, impfPlace['backend'])
         if not data:

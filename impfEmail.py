@@ -22,7 +22,6 @@ def send_mails(condensed_appointments, frontend_url):
 
     messages = _buildForAllSubscribers(subject, content)
     pprint(messages)
-    send_mails(messages)
     with smtplib.SMTP_SSL(os.environ.get('eMailSMTP'), os.environ.get('eMailPort'), context=context) as server:
         print(
             f"Connecting to {os.environ.get('eMailSMTP')} as {SENDER}. Sending {len(messages)} eMails.")
