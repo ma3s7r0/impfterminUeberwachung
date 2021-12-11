@@ -15,8 +15,6 @@ load_dotenv('impf-configuration.env')
 
 STOPFILE_NAME = 'stopTheCount'
 TODAY = date.today()
-year = TODAY.year
-kw = TODAY.isocalendar()[1]
 impfPlaces = json.loads(os.environ.get('impfPlaces'))
 TWEET_MAX_CHARS = 280
 
@@ -76,8 +74,8 @@ for impfPlace in impfPlaces:
         found = _search_for_appointment(data, impfPlace['frontend'])
         if found:
             found_any = True
+        nextYear, kw = divmod(kw, 52)
         kw += 1
-        nextYear, kw = divmod(kw, 53)
         if nextYear:
             year += 1
 
