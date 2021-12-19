@@ -11,7 +11,7 @@ def send_tweets(frontend_url, condensed_apps):
         # Create API object
         api = tweepy.Client(os.environ.get('bearer_token'), os.environ.get(
             'api_key'), os.environ.get('api_key_secret'), os.environ.get('access_token'),
-            os.environ.get('access_token_secret'))
+                            os.environ.get('access_token_secret'))
 
         # Create tweets
         last_tweet = 0
@@ -32,7 +32,21 @@ def _build_tweets(frontend_url, free_appointments):
     tweet_end = f"\nAb gehts zu {frontend_url}. Auffi!"
     tweets = []
     for day, uhrzeiten in free_appointments.items():
-        papp = f"Am {day} um {uhrzeiten}"
-        tweet = tweet_start + papp + tweet_end
-        tweets.append(tweet)
+        uhrzeiten_part = ""
+        for uhrzeit in uhrzeiten:
+            if uhrzeiten_part == "":
+                uhrzeiten_part = uhrzeit
+            else:
+                uhrzeiten_part += ", " + uhrzeit
+            if len(uhrzeiten_part) > 180:
+                papp = f"Am {day} um {uhrzeiten_part}"
+                tweet = tweet_start + papp + tweet_end
+                tweets.append(tweet)
+                uhrzeiten_part = ""
+
+        if uhrzeiten_part != "":
+            papp = f"Am {day} um {uhrzeiten_part}"
+            tweet = tweet_start + papp + tweet_end
+            tweets.append(tweet)
+
     return tweets

@@ -18,9 +18,21 @@ SUBSCRIBERS = os.environ.get('subscribers').split(",")
 
 def send_mails(condensed_appointments, frontend_url):
     subject = f'''Freie Impftermine'''
-    content = f'''Es gibt freie Termine: {condensed_appointments}.\n Ab gehts zu {frontend_url}. Auffi!'''
+    free_apps = []
+    for day, uhrzeiten in condensed_appointments.items():
+        free_app = "{day} um "
+        uhrzeiten_part = ""
+        for uhrzeit in uhrzeiten:
+            if uhrzeiten_part == "":
+                uhrzeiten_part = uhrzeit
+            else:
+                uhrzeiten_part += ", " + uhrzeit
+        free_app += uhrzeiten_part + "\n"
+        free_apps.append(free_app)
 
-    messages = _buildForAllSubscribers(subject, content)
+    content = f'''Es gibt freie Termine am {free_apps}.\n Ab gehts zu {frontend_url}. Auffi!'''
+
+    messages = _build_for_all_subscribers(subject, content)
     pprint(messages)
     with smtplib.SMTP_SSL(os.environ.get('eMailSMTP'), os.environ.get('eMailPort'), context=context) as server:
         print(
@@ -35,7 +47,7 @@ def send_mails(condensed_appointments, frontend_url):
         server.close()
 
 
-def _buildEmail(subscriber, subject, content):
+def _build_email(subscriber, subject, content):
     message = EmailMessage()
     message['From'] = SENDER
     message['To'] = subscriber
@@ -44,8 +56,8 @@ def _buildEmail(subscriber, subject, content):
     return message
 
 
-def _buildForAllSubscribers(subject, content):
+def _build_for_all_subscribers(subject, content):
     messages = []
     for subscriber in SUBSCRIBERS:
-        messages.append(_buildEmail(subscriber, subject, content))
+        messages.append(_build_email(subscriber, subject, content))
     return messages

@@ -33,12 +33,9 @@ def _condense_appointments(free_appointments):
     condensed_apps = {}
     for app in free_appointments:
         day = app.tag
-        condensed_apps[day] = ""
+        condensed_apps[day] = []
     for app in free_appointments:
-        if condensed_apps[app.tag] == "":
-            condensed_apps[app.tag] = app.uhrzeit
-        else:
-            condensed_apps[app.tag] += ", " + app.uhrzeit
+        condensed_apps[app.tag].append(app.uhrzeit)
     return condensed_apps
 
 
@@ -83,5 +80,5 @@ if found_any:
     fp = open(STOPFILE_NAME, 'x')
     fp.close()
     print("Found at least one appointment. Sent eMails and tweet. Now sleeping for an 1/4 hour.")
-    sleep(60 * 15)
+    sleep(60 * 60)
     os.remove(STOPFILE_NAME)
