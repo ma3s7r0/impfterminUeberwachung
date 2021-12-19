@@ -20,14 +20,14 @@ def send_mails(condensed_appointments, frontend_url):
     subject = f'''Freie Impftermine'''
     free_apps = []
     for day, uhrzeiten in condensed_appointments.items():
-        free_app = "{day} um "
+        free_app = f'''{day} um '''
         uhrzeiten_part = ""
         for uhrzeit in uhrzeiten:
             if uhrzeiten_part == "":
                 uhrzeiten_part = uhrzeit
             else:
                 uhrzeiten_part += ", " + uhrzeit
-        free_app += uhrzeiten_part + "\n"
+        free_app += uhrzeiten_part + '''\n'''
         free_apps.append(free_app)
 
     content = f'''Es gibt freie Termine am {free_apps}.\n Ab gehts zu {frontend_url}. Auffi!'''
