@@ -1,8 +1,12 @@
+from time import sleep
+
 import tweepy
 from dotenv import load_dotenv
 import os
+import logging
 
 load_dotenv('impf-configuration.env')
+logger = logging.getLogger(__name__)
 
 
 def send_tweets(frontend_url, condensed_apps):
@@ -22,14 +26,17 @@ def send_tweets(frontend_url, condensed_apps):
             else:
                 last_tweet = api.create_tweet(
                     text=tweet, in_reply_to_tweet_id=last_tweet.data['id'])
-        print(f"Tweeted {tweets}")
+        logger.info(f"Tweeted {tweets}")
     except Exception as e:
-        print(e)
+        logger.error(e)
 
 
 def _build_tweets(frontend_url, free_appointments):
+    usedChars = 0
     tweet_start = f'''Es gibt freie Impftermine!\n'''
+    usedChars += len(tweet_start)
     tweet_end = f"\nAb gehts zu {frontend_url}. Auffi!"
+    usedChars += len(tweet_start)
     tweets = []
     for day, uhrzeiten in free_appointments.items():
         uhrzeiten_part = ""
@@ -38,7 +45,7 @@ def _build_tweets(frontend_url, free_appointments):
                 uhrzeiten_part = uhrzeit
             else:
                 uhrzeiten_part += ", " + uhrzeit
-            if len(uhrzeiten_part) > 180:
+            if len(uhrzeiten_part) > 210 - usedChars:
                 papp = f"Am {day} um {uhrzeiten_part}"
                 tweet = tweet_start + papp + tweet_end
                 tweets.append(tweet)

@@ -1,12 +1,13 @@
+import logging
 import smtplib
 import ssl
-from pprint import pprint
 from dotenv import load_dotenv
 import os
 from email.message import EmailMessage
 
 
 load_dotenv('impf-configuration.env')
+logger = logging.getLogger(__name__)
 # Create a secure SSL context
 context = ssl.create_default_context()
 context.check_hostname = False
@@ -33,17 +34,17 @@ def send_mails(condensed_appointments, frontend_url):
     content = f'''Es gibt freie Termine am {free_apps}.\n Ab gehts zu {frontend_url}. Auffi!'''
 
     messages = _build_for_all_subscribers(subject, content)
-    pprint(messages)
+    logger.debug(messages)
     with smtplib.SMTP_SSL(os.environ.get('eMailSMTP'), os.environ.get('eMailPort'), context=context) as server:
-        print(
+        logger.info(
             f"Connecting to {os.environ.get('eMailSMTP')} as {SENDER}. Sending {len(messages)} eMails.")
         try:
             server.login(SENDER, os.environ.get('eMailPassword'))
             for message in messages:
-                print(f"Sending eMail to {message['To']}.")
+                logger.info(f"Sending eMail to {message['To']}.")
                 server.send_message(message)
         except Exception as e:
-            print(e)
+            logger.error(e)
         server.close()
 
 

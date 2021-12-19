@@ -10,8 +10,12 @@ import requests
 import json
 import impfTwitter
 import impfEmail
+import logging
 
 load_dotenv('impf-configuration.env')
+logging.basicConfig(filename='impfUeberwachung.log', level=logging.INFO)
+logger = logging.getLogger("Main")
+
 
 STOPFILE_NAME = 'stopTheCount'
 TODAY = date.today()
@@ -19,8 +23,8 @@ impfPlaces = json.loads(os.environ.get('impfPlaces'))
 TWEET_MAX_CHARS = 280
 
 
-def _get_data(kw, year, url):
-    params = dict(KW=kw, JAHR=year)
+def _get_data(act_kw, act_year, url):
+    params = dict(KW=act_kw, JAHR=act_year)
     resp = requests.get(url=url, params=params)
     return resp.json()
 
@@ -39,11 +43,11 @@ def _condense_appointments(free_appointments):
     return condensed_apps
 
 
-def _search_for_appointment(data, frontend_url):
+def _search_for_appointment(act_data, frontend_url):
     free_appointments: List[Appointment] = []
-    for timeSlot in data:
+    for timeSlot in act_data:
         for day in timeSlot['SPENDE_TERMIN']:
-            # print(f"Checking timeslot on day: {day['DATUM']}")
+            # logger.info(f"Checking timeslot on day: {day['DATUM']}")
             if _is_free_appointment(day):
                 free_appointments.append(Appointment(
                     day['DATUM'], day['OEFFNUNGSZEIT']))
@@ -57,28 +61,29 @@ def _search_for_appointment(data, frontend_url):
     return False
 
 
-found_any = False
-for impfPlace in impfPlaces:
-    kw = TODAY.isocalendar()[1]
-    year = TODAY.year
-    while not os.path.isfile(STOPFILE_NAME):
-        data = _get_data(kw, year, impfPlace['backend'])
-        if not data:
-            print(
-                f"Can\'t find any appointments. KW {kw} for {impfPlace['backend']} is not online.")
-            break
-        print(f"Checking {impfPlace['backend']}KW={kw}&JAHR={year}")
-        found = _search_for_appointment(data, impfPlace['frontend'])
-        if found:
-            found_any = True
-        nextYear, kw = divmod(kw, 52)
-        kw += 1
-        if nextYear:
-            year += 1
+if __name__ == "__main__":
+    found_any = False
+    for impfPlace in impfPlaces:
+        kw = TODAY.isocalendar()[1]
+        year = TODAY.year
+        while not os.path.isfile(STOPFILE_NAME):
+            data = _get_data(kw, year, impfPlace['backend'])
+            if not data:
+                logger.info(
+                    f"Can\'t find any appointments. KW {kw} for {impfPlace['backend']} is not online.")
+                break
+            logger.info(f"Checking {impfPlace['backend']}KW={kw}&JAHR={year}")
+            found = _search_for_appointment(data, impfPlace['frontend'])
+            if found:
+                found_any = True
+            nextYear, kw = divmod(kw, 52)
+            kw += 1
+            if nextYear:
+                year += 1
 
-if found_any:
-    fp = open(STOPFILE_NAME, 'x')
-    fp.close()
-    print("Found at least one appointment. Sent eMails and tweet. Now sleeping for an 1/4 hour.")
-    sleep(60 * 60)
-    os.remove(STOPFILE_NAME)
+    if found_any:
+        fp = open(STOPFILE_NAME, 'x')
+        fp.close()
+        logger.info("Found at least one appointment. Sent eMails and tweet. Now sleeping for an 1/4 hour.")
+        sleep(60 * 60)
+        os.remove(STOPFILE_NAME)

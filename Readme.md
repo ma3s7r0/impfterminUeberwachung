@@ -1,6 +1,6 @@
 # Impftermin-Überwachung
 
-This little script watches the Impfaktion in the ECE Center in Karlsruhe and alerts via eMail if there is a free appointment.
+This little script watches the vaccination campaign at the ECE Center, the Kammertheater and the Stäadtisches Klinikum in Karlsruhe and alerts via eMail if there is a free appointment.
 
 ## Requirements
 * `python` 2.7 or 3.x
