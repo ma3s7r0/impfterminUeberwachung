@@ -13,9 +13,8 @@ import impfEmail
 import logging
 
 load_dotenv('impf-configuration.env')
-logging.basicConfig(filename='impfUeberwachung.log', level=logging.INFO)
+logging.basicConfig(filename='impfUeberwachung.log', level=logging.INFO, format='%(asctime)s %(message)s')
 logger = logging.getLogger("Main")
-
 
 STOPFILE_NAME = 'stopTheCount'
 TODAY = date.today()
@@ -30,7 +29,7 @@ def _get_data(act_kw, act_year, url):
 
 
 def _is_free_appointment(tag):
-    return tag['TERMIN_STATUS'] != 1 and tag['TERMIN_STATUS'] != 2 and tag['TERMIN_STATUS'] != 3
+    return tag['FREIE_LIEGEN_DAUERSPENDER'] != '-1' and tag['TERMIN_STATUS'] != 1 and tag['TERMIN_STATUS'] != 2 and tag['TERMIN_STATUS'] != 3
 
 
 def _condense_appointments(free_appointments):
@@ -84,6 +83,6 @@ if __name__ == "__main__":
     if found_any:
         fp = open(STOPFILE_NAME, 'x')
         fp.close()
-        logger.info("Found at least one appointment. Sent eMails and tweet. Now sleeping for an 1/4 hour.")
+        logger.info("Found at least one appointment. Sent eMails and tweet. Now sleeping for an hour.")
         sleep(60 * 60)
         os.remove(STOPFILE_NAME)
